@@ -35,6 +35,31 @@ jobs:
           cp /tmp/novalive/NovaLive/settings.gradle.kts .
           cp /tmp/novalive/NovaLive/gradle.properties .
 
+      - name: Fix Java Kotlin compatibility
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("app/build.gradle.kts")
+          s = p.read_text()
+          s = s.replace(
+              "    }\n}\ndependencies {",
+              """    }
+
+              compileOptions {
+                  sourceCompatibility = JavaVersion.VERSION_17
+                  targetCompatibility = JavaVersion.VERSION_17
+              }
+
+              kotlinOptions {
+                  jvmTarget = "17"
+              }
+          }
+          dependencies {""",
+              1
+          )
+          p.write_text(s)
+          PY
+
       - name: Build APK
         run: gradle assembleDebug
 
