@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+
+<title>Nova Live</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    background:#080914;
+    color:white;
+    font-family:Arial,sans-serif;
+    padding-bottom:85px;
+}
+
+header{
+    padding:20px;
+    background:#101225;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    border-bottom:1px solid #272747;
+}
+
+.logo{
+    font-size:25px;
+    font-weight:bold;
+    color:#a78bfa;
+}
+
+.logo span{
+    color:#22d3ee;
+}
+
+.profile{
+    background:#252343;
+    padding:10px;
+    border-radius:50%;
+}
+
+.hero{
+    margin:18px;
+    padding:25px;
+    border-radius:20px;
+    background:linear-gradient(130deg,#5425a8,#151c48,#087b91);
+}
+
+.hero h2{
+    font-size:25px;
+    margin-bottom:10px;
+}
+
+.hero p{
+    color:#ddd;
+    margin-bottom:20px;
+}
+
+button{
+    border:none;
+    padding:12px 18px;
+    border-radius:10px;
+    background:linear-gradient(90deg,#8b5cf6,#06b6d4);
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.section{
+    padding:18px;
+}
+
+.section-title{
+    display:flex;
+    justify-content:space-between;
+    margin-bottom:16px;
+    font-size:19px;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:12px;
+}
+
+.card{
+    background:#15182c;
+    padding:15px;
+    border-radius:14px;
+    border:1px solid #292b49;
+    cursor:pointer;
+}
+
+.card:active{
+    transform:scale(.97);
+}
+
+.channel-logo{
+    height:75px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:30px;
+    background:#202440;
+    border-radius:12px;
+    margin-bottom:10px;
+}
+
+.channel-name{
+    font-weight:bold;
+    font-size:14px;
+    overflow-wrap:anywhere;
+}
+
+.channel-group{
+    color:#22d3ee;
+    font-size:12px;
+    margin-top:5px;
+}
+
+.actions{
+    display:flex;
+    justify-content:space-between;
+    margin-top:12px;
+    align-items:center;
+}
+
+.favorite{
+    background:none;
+    color:#fbbf24;
+    font-size:22px;
+    padding:2px 8px;
+}
+
+nav{
+    position:fixed;
+    bottom:0;
+    left:0;
+    right:0;
+    background:#111426;
+    display:flex;
+    justify-content:space-around;
+    padding:12px 2px;
+    border-top:1px solid #30314c;
+    z-index:10;
+}
+
+nav button{
+    background:none;
+    color:#aaa;
+    padding:5px;
+    font-size:11px;
+}
+
+nav button.active{
+    color:#22d3ee;
+}
+
+input,select{
+    width:100%;
+    padding:14px;
+    margin:8px 0;
+    background:#171a30;
+    border:1px solid #343653;
+    border-radius:10px;
+    color:white;
+    outline:none;
+}
+
+.source-box{
+    background:#15182c;
+    padding:16px;
+    border-radius:15px;
+    margin-bottom:12px;
+}
+
+.hidden{
+    display:none;
+}
+
+.empty{
+    text-align:center;
+    padding:40px 10px;
+    color:#888;
+}
+
+.category{
+    background:#171a30;
+    padding:20px;
+    border-radius:12px;
+    text-align:center;
+    border:1px solid #30314c;
+    cursor:pointer;
+}
+
+#toast{
+    position:fixed;
+    bottom:90px;
+    left:15%;
+    width:70%;
+    background:#252747;
+    padding:13px;
+    border-radius:10px;
+    text-align:center;
+    display:none;
+    z-index:20;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div class="logo">NOVA <span>LIVE</span></div>
+    <div class="profile">▶</div>
+</header>
+
+<div id="homePage">
+
+    <div class="hero">
+        <h2>Welcome to Nova Live</h2>
+        <p>Your Entertainment. Your World.</p>
+        <button onclick="showPage('live')">Explore Live TV →</button>
+    </div>
+
+    <div class="section">
+        <div class="section-title">
+            <b>Recently Watched</b>
+        </div>
+        <div class="grid" id="homeRecent"></div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">
+            <b>Popular Channels</b>
+        </div>
+        <div class="grid" id="homeChannels"></div>
+    </div>
+
+</div>
+
+<div id="livePage" class="hidden">
+    <div class="section">
+        <div class="section-title">
+            <b>Live Television</b>
+            <button onclick="refreshAll()">↻ Refresh</button>
+        </div>
+
+        <input
+            id="search"
+            placeholder="Search channels..."
+            oninput="renderChannels()"
+        >
+
+        <select id="groupFilter" onchange="renderChannels()">
+            <option value="All">All Categories</option>
+        </select>
+
+        <div class="grid" id="channelList"></div>
+    </div>
+</div>
+
+<div id="categoryPage" class="hidden">
+    <div class="section">
+        <div class="section-title">
+            <b>Categories</b>
+        </div>
+
+        <div class="grid">
+
+            <div class="category" onclick="filterGroup('Hindi Entertainment')">📺<br>Hindi Entertainment</div>
+
+            <div class="category" onclick="filterGroup('Hindi News')">📰<br>Hindi News</div>
+
+            <div class="category" onclick="filterGroup('Movies')">🎬<br>Hindi Movies</div>
+
+            <div class="category" onclick="filterGroup('Sports')">🏏<br>Sports</div>
+
+            <div class="category" onclick="filterGroup('Music')">🎵<br>Music</div>
+
+            <div class="category" onclick="filterGroup('Kids')">🧸<br>Kids & Cartoon</div>
+
+            <div class="category" onclick="filterGroup('Other')">🌍<br>Other Languages</div>
+
+        </div>
+    </div>
+</div>
+
+<div id="favoritePage" class="hidden">
+    <div class="section">
+        <div class="section-title">
+            <b>❤️ My Favorites</b>
+        </div>
+        <div class="grid" id="favoriteList"></div>
+    </div>
+</div>
+
+<div id="recentPage" class="hidden">
+    <div class="section">
+        <div class="section-title">
+            <b>Recently Watched</b>
+            <button onclick="clearRecent()">Clear</button>
+        </div>
+        <div class="grid" id="recentList"></div>
+    </div>
+</div>
+
+<div id="sourcePage" class="hidden">
+    <div class="section">
+
+        <div class="section-title">
+            <b>Manage Sources</b>
+        </div>
+
+        <div class="source-box">
+
+            <h3>Add New Source</h3>
+
+            <input id="sourceName" placeholder="Source Name">
+
+            <select id="sourceType">
+                <option value="m3u">M3U / M3U8 Playlist</option>
+                <option value="json">JSON Source</option>
+                <option value="xtream">Xtream Codes API</option>
+                <option value="direct">Direct HLS / DASH URL</option>
+            </select>
+
+            <input
+                id="sourceUrl"
+                placeholder="Playlist URL / Server URL"
+            >
+
+            <input
+                id="sourceUsername"
+                placeholder="Username (Xtream)"
+            >
+
+            <input
+                id="sourcePassword"
+                type="password"
+                placeholder="Password (Xtream)"
+            >
+
+            <button onclick="togglePassword()">Show / Hide Password</button>
+
+            <br><br>
+
+            <button onclick="addSource()">+ Add & Load Source</button>
+
+        </div>
+
+        <div id="sourceList"></div>
+
+        <p id="sourceStatus" style="color:#22d3ee;margin-top:15px"></p>
+
+    </div>
+</div>
+
+<div id="settingsPage" class="hidden">
+    <div class="section">
+
+        <h2>Settings</h2>
+
+        <div class="source-box">
+            <h3>Nova Live</h3>
+            <p style="color:#aaa;margin:12px 0">
+                Version 1.2
+            </p>
+            <p>Premium Live TV Experience</p>
+        </div>
+
+        <div class="source-box">
+            <h3>Channel Information</h3>
+            <p id="channelCount">0 Channels</p>
+            <p id="sourceCount">0 Sources</p>
+        </div>
+
+        <div class="source-box">
+            <h3>Data Management</h3>
+            <button onclick="refreshAll()">Refresh Channels</button>
+            <br><br>
+            <button onclick="clearRecent()">Clear Recent History</button>
+        </div>
+
+    </div>
+</div>
+
+<div id="toast"></div>
+
+<nav>
+
+    <button class="active" onclick="showPage('home',this)">⌂<br>Home</button>
+
+    <button onclick="showPage('live',this)">▶<br>Live TV</button>
+
+    <button onclick="showPage('category',this)">▦<br>Categories</button>
+
+    <button onclick="showPage('favorite',this)">♥<br>Favorites</button>
+
+    <button onclick="showPage('source',this)">☷<br>Sources</button>
+
+    <button onclick="showPage('settings',this)">⚙<br>Settings</button>
+
+</nav>
+
+<script>
+
+let channels = [];
+let favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
+let recent = JSON.parse(localStorage.getItem("recent") || "[]");
+let sources = JSON.parse(localStorage.getItem("sources") || "[]");
+
+let pageNames = [
+    "home",
+    "live",
+    "category",
+    "favorite",
+    "recent",
+    "source",
+    "settings"
+];
+
+function toast(message){
+
+    let t = document.getElementById("toast");
+
+    t.innerText = message;
+    t.style.display = "block";
+
+    setTimeout(()=>{
+        t.style.display = "none";
+    },2500);
+}
+
+function saveData(){
+
+    localStorage.setItem("favorites",JSON.stringify(favorites));
+    localStorage.setItem("recent",JSON.stringify(recent));
+    localStorage.setItem("sources",JSON.stringify(sources));
+
+    if(window.NovaAndroid){
+        NovaAndroid.saveSources(JSON.stringify(sources));
+        NovaAndroid.saveChannels(JSON.stringify(channels));
+    }
+}
+
+function showPage(page,button){
+
+    pageNames.forEach(name=>{
+        document.getElementById(name+"Page").classList.add("hidden");
+    });
+
+    document.getElementById(page+"Page").classList.remove("hidden");
+
+    document.querySelectorAll("nav button").forEach(b=>{
+        b.classList.remove("active");
+    });
+
+    if(button) button.classList.add("active");
+
+    if(page==="live") renderChannels();
+    if(page==="favorite") renderFavorites();
+    if(page==="recent") renderRecent();
+    if(page==="source") renderSources();
+    if(page==="home") renderHome();
+}
+
+function normalize(item){
+
+    return {
+        name:String(item.name || item.title || "Unknown Channel"),
+        url:String(item.url || item.stream_url || ""),
+        logo:String(item.logo || item.tvg_logo || ""),
+        group:String(item.group || item.category || "Other")
+    };
+}
+
+function channelCard(c){
+
+    let fav = favorites.some(x=>x.url===c.url);
+
+    return `
+    <div class="card">
+
+        <div onclick="playChannel('${encodeURIComponent(c.url)}','${encodeURIComponent(c.name)}')">
+
+            <div class="channel-logo">
+                ${c.logo
+                    ? `<img src="${escapeHtml(c.logo)}"
+                    style="max-width:100%;max-height:65px"
+                    onerror="this.style.display='none'">`
+                    : "▶"
+                }
+            </div>
+
+            <div class="channel-name">${escapeHtml(c.name)}</div>
+            <div class="channel-group">${escapeHtml(c.group)}</div>
+
+        </div>
+
+        <div class="actions">
+            <button onclick="playChannel('${encodeURIComponent(c.url)}','${encodeURIComponent(c.name)}')">
+                ▶ Play
+            </button>
+
+            <button class="favorite"
+            onclick="toggleFavorite('${encodeURIComponent(c.url)}')">
+                ${fav?"★":"☆"}
+            </button>
+        </div>
+
+    </div>`;
+}
+
+function escapeHtml(value){
+
+    return String(value).replace(/[&<>"']/g, c=>({
+        "&":"&amp;",
+        "<":"&lt;",
+        ">":"&gt;",
+        '"':"&quot;",
+        "'":"&#39;"
+    })[c]);
+}
+
+function renderChannels(){
+
+    let search = document.getElementById("search").value.toLowerCase();
+
+    let group = document.getElementById("groupFilter").value;
+
+    let filtered = channels.filter(c=>{
+
+        let matchesName = c.name.toLowerCase().includes(search);
+
+        let matchesGroup = group==="All" || c.group===group;
+
+        return matchesName && matchesGroup;
+    });
+
+    document.getElementById("channelList").innerHTML =
+        filtered.length
+        ? filtered.map(channelCard).join("")
+        : `<div class="empty">No channels found</div>`;
+}
+
+function updateGroups(){
+
+    let select = document.getElementById("groupFilter");
+
+    let groups = [...new Set(channels.map(c=>c.group))];
+
+    select.innerHTML =
+        '<option value="All">All Categories</option>';
+
+    groups.forEach(g=>{
+
+        let option = document.createElement("option");
+
+        option.value = g;
+        option.textContent = g;
+
+        select.appendChild(option);
+    });
+}
+
+function renderFavorites(){
+
+    document.getElementById("favoriteList").innerHTML =
+        favorites.length
+        ? favorites.map(channelCard).join("")
+        : `<div class="empty">No favorite channels yet</div>`;
+}
+
+function renderRecent(){
+
+    document.getElementById("recentList").innerHTML =
+        recent.length
+        ? recent.map(channelCard).join("")
+        : `<div class="empty">No recently watched channels</div>`;
+}
+
+function renderHome(){
+
+    document.getElementById("homeChannels").innerHTML =
+        channels.slice(0,4).map(channelCard).join("");
+
+    document.getElementById("homeRecent").innerHTML =
+        recent.slice(0,4).map(channelCard).join("");
+
+    document.getElementById("channelCount").innerText =
+        channels.length+" Channels";
+
+    document.getElementById("sourceCount").innerText =
+        sources.length+" Sources";
+}
+
+function toggleFavorite(encoded){
+
+    let url = decodeURIComponent(encoded);
+
+    let channel = channels.find(c=>c.url===url);
+
+    if(!channel) return;
+
+    if(favorites.some(c=>c.url===url)){
+
+        favorites = favorites.filter(c=>c.url!==url);
+
+        toast("Removed from Favorites");
+
+    }else{
+
+        favorites.push(channel);
+
+        toast("Added to Favorites");
+    }
+
+    saveData();
+
+    renderChannels();
+    renderFavorites();
+    renderHome();
+}
+
+function playChannel(encodedUrl,encodedName){
+
+    let url = decodeURIComponent(encodedUrl);
+    let name = decodeURIComponent(encodedName);
+
+    let channel = channels.find(c=>c.url===url);
+
+    if(!channel) return;
+
+    recent = recent.filter(c=>c.url!==url);
+
+    recent.unshift(channel);
+
+    recent = recent.slice(0,30);
+
+    saveData();
+
+    if(window.NovaAndroid){
+
+        NovaAndroid.play(url,name);
+
+    }else{
+
+        toast("Android Player required");
+    }
+}
+
+function clearRecent(){
+
+    recent=[];
+
+    saveData();
+
+    renderRecent();
+    renderHome();
+
+    toast("Recent History Cleared");
+}
+
+function filterGroup(group){
+
+    showPage("live");
+
+    document.getElementById("search").value="";
+
+    document.getElementById("groupFilter").value =
+        [...document.getElementById("groupFilter").options]
+        .some(o=>o.value===group) ? group : "All";
+
+    renderChannels();
+}
+
+function togglePassword(){
+
+    let p=document.getElementById("sourcePassword");
+
+    p.type=p.type==="password"?"text":"password";
+}
+
+function addSource(){
+
+    let name=document.getElementById("sourceName").value.trim();
+
+    let type=document.getElementById("sourceType").value;
+
+    let url=document.getElementById("sourceUrl").value.trim();
+
+    let username=document.getElementById("sourceUsername").value;
+
+    let password=document.getElementById("sourcePassword").value;
+
+    if(!name || !url){
+
+        toast("Enter source name and URL");
+
+        return;
+    }
+
+    try{
+
+        let parsed=new URL(url);
+
+        if(!["http:","https:"].includes(parsed.protocol)){
+            throw new Error("Invalid protocol");
+        }
+
+    }catch(e){
+
+        toast("Invalid source URL");
+
+        return;
+    }
+
+    if(type==="xtream" && (!username || !password)){
+
+        toast("Xtream credentials required");
+
+        return;
+    }
+
+    let source={
+        id:Date.now().toString(),
+        name,
+        type,
+        url,
+        username,
+        password
+    };
+
+    sources.push(source);
+
+    saveData();
+
+    renderSources();
+
+    loadSource(source);
+
+    document.getElementById("sourceName").value="";
+    document.getElementById("sourceUrl").value="";
+    document.getElementById("sourceUsername").value="";
+    document.getElementById("sourcePassword").value="";
+}
+
+function loadSource(source){
+
+    document.getElementById("sourceStatus").innerText=
+        "Loading "+source.name+"...";
+
+    if(window.NovaAndroid){
+
+        NovaAndroid.loadSource(
+            source.type,
+            source.url,
+            source.username,
+            source.password
+        );
+
+    }else{
+
+        toast("Android application required");
+    }
+}
+
+window.onSourceLoaded=function(payload,error){
+
+    if(error){
+
+        document.getElementById("sourceStatus").innerText=
+            "Error: "+error;
+
+        toast("Source loading failed");
+
+        return;
+    }
+
+    try{
+
+        let loaded=JSON.parse(payload);
+
+        if(!Array.isArray(loaded)) throw new Error("Invalid data");
+
+        let added=0;
+
+        loaded.forEach(item=>{
+
+            let c=normalize(item);
+
+            if(!c.url) return;
+
+            if(!channels.some(x=>x.url===c.url)){
+
+                channels.push(c);
+
+                added++;
+            }
+        });
+
+        saveData();
+
+        updateGroups();
+
+        renderChannels();
+        renderHome();
+
+        document.getElementById("sourceStatus").innerText=
+            added+" new channels loaded";
+
+        toast(added+" Channels Added");
+
+    }catch(e){
+
+        document.getElementById("sourceStatus").innerText=
+            "Invalid source data";
+
+    }
+};
+
+function renderSources(){
+
+    document.getElementById("sourceList").innerHTML=
+
+    sources.map(s=>`
+
+        <div class="source-box">
+
+            <b>${escapeHtml(s.name)}</b>
+
+            <p style="color:#aaa;margin:8px 0">
+                ${escapeHtml(s.type)}
+            </p>
+
+            <button onclick="loadSource(sources.find(x=>x.id==='${s.id}'))">
+                ↻ Refresh
+            </button>
+
+            <button onclick="deleteSource('${s.id}')">
+                Delete
+            </button>
+
+        </div>
+
+    `).join("");
+}
+
+function deleteSource(id){
+
+    sources=sources.filter(s=>s.id!==id);
+
+    saveData();
+
+    renderSources();
+
+    toast("Source Deleted");
+}
+
+function refreshAll(){
+
+    if(!sources.length){
+
+        toast("Add a source first");
+
+        return;
+    }
+
+    sources.forEach(loadSource);
+}
+
+function initialize(){
+
+    try{
+
+        if(window.NovaAndroid){
+
+            let saved=JSON.parse(NovaAndroid.getSavedChannels());
+
+            if(Array.isArray(saved) && saved.length){
+                channels=saved.map(normalize);
+            }
+
+            let savedSources=JSON.parse(NovaAndroid.getSavedSources());
+
+            if(Array.isArray(savedSources) && savedSources.length){
+                sources=savedSources;
+            }
+        }
+
+    }catch(e){
+
+        console.log("Restore failed");
+    }
+
+    renderHome();
+    renderChannels();
+    renderFavorites();
+    renderRecent();
+    renderSources();
+
+    updateGroups();
+}
+
+initialize();
+
+</script>
+
+</body>
+</html>
