@@ -27,6 +27,12 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Automatic background refresh schedule
+        ChannelRefreshWorker.schedule(
+            applicationContext,
+            12
+        )
+
         web = WebView(this)
         web.setBackgroundColor(0xff080914.toInt())
 
