@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.util.Base64
 import android.webkit.*
 import org.json.JSONArray
 import org.json.JSONObject
@@ -243,6 +244,19 @@ class MainActivity : Activity() {
 
                 if (url.isBlank()) continue
 
+                val channelHeaders = JSONObject()
+                obj.optJSONObject("headers")?.let { sourceHeaders ->
+                    sourceHeaders.keys().forEach { key ->
+                        channelHeaders.put(key, sourceHeaders.optString(key))
+                    }
+                }
+                listOf("user_agent" to "User-Agent", "userAgent" to "User-Agent",
+                    "referer" to "Referer", "origin" to "Origin", "cookie" to "Cookie").forEach { (sourceKey, headerName) ->
+                    val value = obj.optString(sourceKey, "")
+                    if (value.isNotBlank() && value != "null" && !channelHeaders.has(headerName)) {
+                        channelHeaders.put(headerName, value)
+                    }
+                }
                 output.put(
                     JSONObject()
                         .put(
@@ -250,7 +264,7 @@ class MainActivity : Activity() {
                             first(obj, "name", "title", "channel_name")
                                 .ifBlank { "Channel ${i + 1}" }
                         )
-                        .put("url", url)
+                        .put("url", attachHeaders(url, channelHeaders))
                         .put(
                             "group",
                             first(obj, "group", "category", "group_title")
@@ -275,12 +289,31 @@ class MainActivity : Activity() {
         var name = "Channel"
         var group = "Other"
         var logo = ""
+        var streamHeaders = JSONObject()
 
         text.lineSequence().forEach { line ->
 
             val s = line.trim()
 
-            if (s.startsWith("#EXTINF", true)) {
+            if (s.startsWith("#EXTVLCOPT:", true)) {
+                val directive = s.substringAfter(":")
+                val split = directive.indexOf('=')
+                if (split > 0) {
+                    val key = directive.substring(0, split).trim().lowercase()
+                    val value = directive.substring(split + 1).trim()
+                    when (key) {
+                        "http-user-agent" -> streamHeaders.put("User-Agent", value)
+                        "http-referrer", "http-referer" -> streamHeaders.put("Referer", value)
+                        "http-origin" -> streamHeaders.put("Origin", value)
+                        "http-cookie" -> streamHeaders.put("Cookie", value)
+                    }
+                }
+            } else if (s.startsWith("#EXTHTTP:", true)) {
+                try {
+                    val rawHeaders = JSONObject(s.substringAfter(":"))
+                    rawHeaders.keys().forEach { key -> streamHeaders.put(key, rawHeaders.optString(key)) }
+                } catch (_: Exception) { }
+            } else if (s.startsWith("#EXTINF", true)) {
 
                 name = s.substringAfterLast(",")
                     .trim()
@@ -303,7 +336,7 @@ class MainActivity : Activity() {
                 output.put(
                     JSONObject()
                         .put("name", name)
-                        .put("url", s)
+                        .put("url", attachHeaders(s, streamHeaders))
                         .put("group", group)
                         .put("logo", logo)
                 )
@@ -311,6 +344,7 @@ class MainActivity : Activity() {
                 name = "Channel"
                 group = "Other"
                 logo = ""
+                streamHeaders = JSONObject()
             }
         }
 
@@ -319,6 +353,17 @@ class MainActivity : Activity() {
         }
 
         return output
+    }
+
+    // Encodes per-stream request headers in a URL-safe suffix consumed by PlayerActivity.
+    private fun attachHeaders(url: String, headers: JSONObject): String {
+        if (headers.length() == 0) return url
+        val metadata = JSONObject().put("headers", headers)
+        val encoded = Base64.encodeToString(
+            metadata.toString().toByteArray(Charsets.UTF_8),
+            Base64.NO_WRAP
+        )
+        return "$url|nova=$encoded"
     }
 
     private fun loadXtream(
