@@ -21,7 +21,7 @@ header{position:fixed;top:0;left:0;right:0;height:70px;background:var(--bg);bord
 .chip.on{background:var(--g);border-color:transparent;color:#fff}
 h2{margin:18px 16px 12px;font-size:25px;display:flex;align-items:center;gap:10px}h2:before{content:"";width:6px;height:28px;border-radius:4px;background:linear-gradient(#00c6ff,#ff0a8a)}
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0 12px}
-.card{border:2px solid var(--line);border-radius:26px;overflow:hidden;background:var(--card);position:relative}
+.card{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;border:2px solid var(--line);border-radius:26px;overflow:hidden;background:var(--card);position:relative}
 .lg{height:112px;display:flex;align-items:center;justify-content:center;padding:26px 8px 6px;font-size:30px}
 .lg img{max-width:100%;max-height:70px;object-fit:contain}
 .nm{background:var(--chip);border-top:1px solid var(--line);padding:14px 4px;text-align:center;font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -88,17 +88,21 @@ window.handleBack=function(){if($("dr").classList.contains("open")){drawer(0);re
 function normalize(i){return{name:String(i.name||i.title||"Unknown Channel"),url:String(i.url||i.stream_url||""),logo:String(i.logo||i.tvg_logo||""),group:String(i.group||i.category||"Other")}}
 function esc(v){return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c])}
 function card(c){let u=encodeURIComponent(c.url),n=encodeURIComponent(c.name),f=favorites.some(x=>x.url===c.url);
-return`<div class="card"><button class="hrt ${f?"on":""}" onclick="toggleFavorite('${u}')">♥</button><span class="live">LIVE</span>
-<div onclick="playChannel('${u}','${n}')"><div class="lg">${c.logo?`<img src="${esc(c.logo)}" onerror="this.outerHTML='▶'">`:"▶"}</div><div class="nm">${esc(c.name)}</div></div></div>`}
+return`<div class="card" ontouchstart="lpStart('${u}')" ontouchend="lpEnd()" ontouchmove="lpEnd()" ontouchcancel="lpEnd()" oncontextmenu="return false"><button class="hrt ${f?"on":""}" onclick="toggleFavorite('${u}')">${f?"♥":"♡"}</button><span class="live">LIVE</span>
+<div onclick="tapCh('${u}','${n}')"><div class="lg">${c.logo?`<img src="${esc(c.logo)}" onerror="this.outerHTML='▶'">`:"▶"}</div><div class="nm">${esc(c.name)}</div></div></div>`}
 function renderHome(){let q=$("search").value.toLowerCase(),list=channels.filter(c=>c.name.toLowerCase().includes(q));
 let groups=[...new Set(channels.map(c=>c.group))];$("cnt").innerText=channels.length+" Channels";
 $("chips").innerHTML=["All",...groups].map(g=>`<button class="chip ${g==cat?"on":""}" onclick="cat=this.dataset.g;renderHome()" data-g="${esc(g)}">${esc(g)}</button>`).join("");
 if(!list.length){$("homeList").innerHTML=`<div class="grid"><div class="empty">${channels.length?"No channels found":"No channels yet. Open menu ☰ → Manage Sources and add a playlist."}</div></div>`;return}
 let show=cat=="All"?groups:[cat];
 $("homeList").innerHTML=show.map(g=>{let l=list.filter(c=>c.group==g);return l.length?`<h2>${esc(g)}</h2><div class="grid">${l.map(card).join("")}</div>`:""}).join("")}
-function renderAll(){renderHome();$("favoriteList").innerHTML=favorites.length?favorites.map(card).join(""):`<div class="empty">No favorite channels yet</div>`;
+function renderAll(){renderHome();$("favoriteList").innerHTML=favorites.length?favorites.map(card).join(""):`<div class="empty">No favorite channels yet. Long-press any channel to add.</div>`;
 $("recentList").innerHTML=recent.length?recent.map(card).join(""):`<div class="empty">No recently watched channels</div>`;
 $("favCount").innerText=favorites.length;$("channelCount").innerText=channels.length+" Channels";$("sourceCount").innerText=sources.length+" Sources";renderSources()}
+let lpT=null,lpDone=false;
+function lpStart(u){lpDone=false;clearTimeout(lpT);lpT=setTimeout(()=>{lpDone=true;if(navigator.vibrate)navigator.vibrate(40);toggleFavorite(u)},550)}
+function lpEnd(){clearTimeout(lpT)}
+function tapCh(u,n){if(lpDone){lpDone=false;return}playChannel(u,n)}
 function toggleFavorite(e){let u=decodeURIComponent(e),c=channels.find(x=>x.url===u)||favorites.find(x=>x.url===u);if(!c)return;
 if(favorites.some(x=>x.url===u)){favorites=favorites.filter(x=>x.url!==u);toast("Removed from Favorites")}else{favorites.push(c);toast("Added to Favorites")}saveData();renderAll()}
 function playChannel(eu,en){let u=decodeURIComponent(eu),n=decodeURIComponent(en),c=channels.find(x=>x.url===u)||recent.find(x=>x.url===u)||favorites.find(x=>x.url===u);if(!c)return;
