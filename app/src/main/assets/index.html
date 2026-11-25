@@ -90,13 +90,15 @@ function esc(v){return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",
 function card(c){let u=encodeURIComponent(c.url),n=encodeURIComponent(c.name),f=favorites.some(x=>x.url===c.url);
 return`<div class="card" ontouchstart="lpStart('${u}')" ontouchend="lpEnd()" ontouchmove="lpEnd()" ontouchcancel="lpEnd()" oncontextmenu="return false"><button class="hrt ${f?"on":""}" onclick="toggleFavorite('${u}')">${f?"♥":"♡"}</button><span class="live">LIVE</span>
 <div onclick="tapCh('${u}','${n}')"><div class="lg">${c.logo?`<img src="${esc(c.logo)}" onerror="this.outerHTML='▶'">`:"▶"}</div><div class="nm">${esc(c.name)}</div></div></div>`}
+const isHi=c=>/[\u0900-\u097F]/.test(c.name)||/hindi/i.test(c.name+" "+c.group);
+const hiSort=l=>[...l].sort((a,b)=>isHi(b)-isHi(a));
 function renderHome(){let q=$("search").value.toLowerCase(),list=channels.filter(c=>c.name.toLowerCase().includes(q));
-let groups=[...new Set(channels.map(c=>c.group))];$("cnt").innerText=channels.length+" Channels";
+let groups=[...new Set(channels.map(c=>c.group))].sort((a,b)=>(/hindi|हिन्दी|हिंदी/i.test(b)?1:0)-(/hindi|हिन्दी|हिंदी/i.test(a)?1:0));$("cnt").innerText=channels.length+" Channels";
 $("chips").innerHTML=["All",...groups].map(g=>`<button class="chip ${g==cat?"on":""}" onclick="cat=this.dataset.g;renderHome()" data-g="${esc(g)}">${esc(g)}</button>`).join("");
 if(!list.length){$("homeList").innerHTML=`<div class="grid"><div class="empty">${channels.length?"No channels found":"No channels yet. Open menu ☰ → Manage Sources and add a playlist."}</div></div>`;return}
 let show=cat=="All"?groups:[cat];
-$("homeList").innerHTML=show.map(g=>{let l=list.filter(c=>c.group==g);return l.length?`<h2>${esc(g)}</h2><div class="grid">${l.map(card).join("")}</div>`:""}).join("")}
-function renderAll(){renderHome();$("favoriteList").innerHTML=favorites.length?favorites.map(card).join(""):`<div class="empty">No favorite channels yet. Long-press any channel to add.</div>`;
+$("homeList").innerHTML=show.map(g=>{let l=hiSort(list.filter(c=>c.group==g));return l.length?`<h2>${esc(g)}</h2><div class="grid">${l.map(card).join("")}</div>`:""}).join("")}
+function renderAll(){renderHome();$("favoriteList").innerHTML=favorites.length?hiSort(favorites).map(card).join(""):`<div class="empty">No favorite channels yet. Long-press any channel to add.</div>`;
 $("recentList").innerHTML=recent.length?recent.map(card).join(""):`<div class="empty">No recently watched channels</div>`;
 $("favCount").innerText=favorites.length;$("channelCount").innerText=channels.length+" Channels";$("sourceCount").innerText=sources.length+" Sources";renderSources()}
 let lpT=null,lpDone=false;
