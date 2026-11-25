@@ -48,6 +48,13 @@ class MainActivity : Activity() {
         web.loadUrl("file:///android_asset/index.html")
     }
 
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        web.evaluateJavascript("window.handleBack && window.handleBack()") { r ->
+            if (r != "true") finish()
+        }
+    }
+
     inner class Bridge {
 
         @JavascriptInterface
@@ -66,6 +73,20 @@ class MainActivity : Activity() {
         @JavascriptInterface
         fun saveSources(value: String) {
             prefs.edit().putString("sources", value).apply()
+        }
+
+        @JavascriptInterface
+        fun quit() {
+            runOnUiThread { finishAffinity() }
+        }
+
+        @JavascriptInterface
+        fun openUrl(url: String) {
+            runOnUiThread {
+                try {
+                    startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)))
+                } catch (e: Exception) { }
+            }
         }
 
         @JavascriptInterface
