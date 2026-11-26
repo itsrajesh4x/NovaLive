@@ -85,7 +85,7 @@ function toggleTheme(){document.body.classList.toggle("light");let l=document.bo
 function quitApp(){window.NovaAndroid?NovaAndroid.quit():toast("Quit works on Android only")}
 function openIg(){window.NovaAndroid?NovaAndroid.openUrl(INSTA_URL):window.open(INSTA_URL)}
 window.handleBack=function(){if($("dr").classList.contains("open")){drawer(0);return true}if(cur!="home"){go("home");return true}return false};
-function normalize(i){return{name:String(i.name||i.title||"Unknown Channel"),url:String(i.url||i.stream_url||""),logo:String(i.logo||i.tvg_logo||""),group:String(i.group||i.category||"Other")}}
+function normalize(i){return{name:String(i.name||i.title||"Unknown Channel"),url:String(i.url||i.stream_url||""),logo:String(i.logo||i.tvg_logo||""),group:String(i.group||i.category||"Other"),headers:(i.headers&&typeof i.headers==="object")?i.headers:{}}}
 function esc(v){return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c])}
 function card(c){let u=encodeURIComponent(c.url),n=encodeURIComponent(c.name),f=favorites.some(x=>x.url===c.url);
 return`<div class="card" ontouchstart="lpStart('${u}')" ontouchend="lpEnd()" ontouchmove="lpEnd()" ontouchcancel="lpEnd()" oncontextmenu="return false"><button class="hrt ${f?"on":""}" onclick="toggleFavorite('${u}')">${f?"♥":"♡"}</button><span class="live">LIVE</span>
@@ -108,7 +108,7 @@ function tapCh(u,n){if(lpDone){lpDone=false;return}playChannel(u,n)}
 function toggleFavorite(e){let u=decodeURIComponent(e),c=channels.find(x=>x.url===u)||favorites.find(x=>x.url===u);if(!c)return;
 if(favorites.some(x=>x.url===u)){favorites=favorites.filter(x=>x.url!==u);toast("Removed from Favorites")}else{favorites.push(c);toast("Added to Favorites")}saveData();renderAll()}
 function playChannel(eu,en){let u=decodeURIComponent(eu),n=decodeURIComponent(en),c=channels.find(x=>x.url===u)||recent.find(x=>x.url===u)||favorites.find(x=>x.url===u);if(!c)return;
-recent=[c,...recent.filter(x=>x.url!==u)].slice(0,30);saveData();window.NovaAndroid?NovaAndroid.play(u,n):toast("Android Player required")}
+recent=[c,...recent.filter(x=>x.url!==u)].slice(0,30);saveData();window.NovaAndroid?NovaAndroid.play(u,n,JSON.stringify(c.headers||{})):toast("Android Player required")}
 function clearRecent(){recent=[];saveData();renderAll();toast("Recent History Cleared")}
 function togglePassword(){let p=$("sourcePassword");p.type=p.type=="password"?"text":"password"}
 function addSource(){let name=$("sourceName").value.trim(),type=$("sourceType").value,url=$("sourceUrl").value.trim(),username=$("sourceUsername").value,password=$("sourcePassword").value;
@@ -119,8 +119,8 @@ let s={id:Date.now().toString(),name,type,url,username,password};sources.push(s)
 ["sourceName","sourceUrl","sourceUsername","sourcePassword"].forEach(i=>$(i).value="")}
 function loadSource(s){$("sourceStatus").innerText="Loading "+s.name+"...";window.NovaAndroid?NovaAndroid.loadSource(s.type,s.url,s.username,s.password):toast("Android application required")}
 window.onSourceLoaded=function(payload,error){if(error){$("sourceStatus").innerText="Error: "+error;return toast("Source loading failed")}
-try{let l=JSON.parse(payload);if(!Array.isArray(l))throw 0;let a=0;l.forEach(i=>{let c=normalize(i);if(c.url&&!channels.some(x=>x.url===c.url)){channels.push(c);a++}});
-saveData();renderAll();$("sourceStatus").innerText=a+" new channels loaded";toast(a+" Channels Added")}catch(e){$("sourceStatus").innerText="Invalid source data"}};
+try{let l=JSON.parse(payload);if(!Array.isArray(l))throw 0;let a=0;l.forEach(i=>{let c=normalize(i);if(!c.url)return;let at=channels.findIndex(x=>x.url===c.url);if(at>=0)channels[at]=c;else{channels.push(c);a++}});
+saveData();renderAll();$("sourceStatus").innerText=a+" new channels loaded; existing channel settings refreshed";toast(a+" New Channels; existing entries refreshed")}catch(e){$("sourceStatus").innerText="Invalid source data"}};
 function renderSources(){$("sourceList").innerHTML=sources.map(s=>`<div class="box"><b>${esc(s.name)}</b><p style="color:var(--sub)">${esc(s.type)}</p>
 <button class="btn" onclick="loadSource(sources.find(x=>x.id==='${s.id}'))">↻ Refresh</button><button class="btn" onclick="deleteSource('${s.id}')">Delete</button></div>`).join("")}
 function deleteSource(id){sources=sources.filter(s=>s.id!==id);saveData();renderAll();toast("Source Deleted")}
