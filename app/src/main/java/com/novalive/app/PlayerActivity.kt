@@ -59,6 +59,7 @@ class PlayerActivity : Activity() {
 
     private var channelName = "Nova Live"
     private var streamUrl = ""
+    private var channelHeaders = emptyMap<String, String>()
     private var attempt = 0
     private var resizeIdx = 0
     private val resizeModes = intArrayOf(
@@ -78,6 +79,10 @@ class PlayerActivity : Activity() {
 
         streamUrl = intent.getStringExtra("url") ?: ""
         channelName = intent.getStringExtra("title") ?: "Nova Live"
+        channelHeaders = try {
+            val obj = JSONObject(intent.getStringExtra("headers") ?: "{}")
+            buildMap { val keys = obj.keys(); while (keys.hasNext()) { val k = keys.next(); put(k, obj.optString(k)) } }
+        } catch (_: Exception) { emptyMap() }
         if (streamUrl.isBlank()) { finish(); return }
 
         buildUi()
@@ -346,7 +351,11 @@ class PlayerActivity : Activity() {
         spinner.visibility = View.VISIBLE
 
         try {
-            val (url, headers, key) = parseStream(streamUrl)
+            val (url, inlineHeaders, key) = parseStream(streamUrl)
+            val headers = LinkedHashMap<String, String>().apply {
+                putAll(channelHeaders)
+                putAll(inlineHeaders)
+            }
 
             val ua = headers.entries.firstOrNull { it.key.equals("user-agent", true) }?.value
                 ?: "Mozilla/5.0 (Linux; Android 11; Mobile) AppleWebKit/537.36 Chrome/120.0 Mobile Safari/537.36"
